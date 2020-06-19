@@ -1,10 +1,14 @@
 import React, { Component, Fragment } from "react";
 import ReactTable from "react-table";
 import moment from "moment";
+import Swal from "sweetalert2";
+import { withRouter } from "react-router-dom";
+import { compose } from "recompose";
 
 import "react-table/react-table.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { withFirebase } from "../Firebase";
 
 export class Datatable extends Component {
   constructor(props) {
@@ -160,14 +164,36 @@ export class Datatable extends Component {
           <div>
             <span
               onClick={() => {
-                if (
-                  window.confirm("Are you sure you wish to delete this item?")
-                ) {
-                  let data = myData;
-                  data.splice(row.index, 1);
-                  this.setState({ myData: data });
-                }
-                toast.success("Successfully Deleted !");
+                Swal.fire({
+                  title: "Are you sure?",
+                  text: "You won't be able to revert this!",
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonColor: "#3085d6",
+                  cancelButtonColor: "#d33",
+                  confirmButtonText: "Yes, delete it!",
+                }).then((result) => {
+                  if (result.value) {
+                    this.props.firebase
+                      .pages()
+                      .doc(myData[row.index].uid)
+                      .delete()
+                      .then(() => {
+                        console.log(myData[row.index], "row");
+                        Swal.fire(
+                          "Deleted!",
+                          "Your file has been deleted.",
+                          "success"
+                        ).then(() => {
+                          window.location.reload();
+                        });
+                        toast.success("Successfully Deleted !");
+                      })
+                      .catch((error) => {
+                        console.error("Error removing document: ", error);
+                      });
+                  }
+                });
               }}
             >
               <i
@@ -216,4 +242,4 @@ export class Datatable extends Component {
   }
 }
 
-export default Datatable;
+export default compose(withRouter, withFirebase)(Datatable);

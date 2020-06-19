@@ -23,6 +23,7 @@ class ListPages extends Component {
 
       snapshot.forEach((doc) =>
         pages.push({
+          uid: doc.id,
           title: doc.data().title,
           createdDate: doc.data().createdDate,
           updatedDate: doc.data().updatedDate,

@@ -8,6 +8,7 @@ import { withFirebase } from "../Firebase";
 
 const INITIAL_STATE = {
   error: null,
+  pages: [],
 };
 
 export class Create_page extends Component {
@@ -17,18 +18,41 @@ export class Create_page extends Component {
     this.state = { ...INITIAL_STATE };
   }
 
+  componentDidMount() {
+    this.setState({ loading: true });
+
+    this.unsubscribe = this.props.firebase.pages().onSnapshot((snapshot) => {
+      let pages = [];
+
+      snapshot.forEach((doc) =>
+        pages.push({
+          value: doc.id,
+          label: doc.data().alias,
+        })
+      );
+
+      this.setState({
+        pages,
+        loading: false,
+      });
+    });
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe();
+  }
+
   onSubmit = (event) => {
     console.log(event);
+
+    event.createdDate = Date.now();
+    event.updatedDate = Date.now();
+    event.parentId = event.parentId !== undefined ? event.parentId : 0;
 
     this.props.firebase
       .pages()
       .add({
-        title: event.title,
-        description: event.description,
-        metaTitle: event.metaTitle || "",
-        metaDescription: event.metaDescription || "",
-        createdDate: Date.now(),
-        updatedDate: Date.now(),
+        ...event,
       })
       .then(() => {
         this.props.history.push(ROUTES.LIST_PAGES);
@@ -50,7 +74,10 @@ export class Create_page extends Component {
               <h5>Add Page</h5>
             </div>
             <div className="card-body">
-              <Tabset_page handleSubmit={this.onSubmit} />
+              <Tabset_page
+                options={this.state.pages}
+                handleSubmit={this.onSubmit}
+              />
             </div>
           </div>
         </div>
